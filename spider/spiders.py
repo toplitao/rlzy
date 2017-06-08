@@ -6,6 +6,8 @@ import requests, time, json, threading, os
 
 from bs4 import BeautifulSoup
 
+from pprint import pprint
+
 domian = 'http://www.cqhrss.gov.cn'
 global COOKIE
 
@@ -16,6 +18,7 @@ def start():
     session = requests.Session()
     response = session.get(domian)
     COOKIE = session.cookies.get_dict()
+    print('获取cookie中......')
     print(COOKIE)
     if not COOKIE:
         time.sleep(5)
@@ -92,29 +95,29 @@ def analysis_index(html_doc):
     deal_child(data)
     
 def deal_child(data):
+    istrs=['报名时间','报名地址','报名方式']
     for item in data:
         item['thread'].join()
         soup = BeautifulSoup(item['thread'].get_thread_body())
         for p in soup.select(".information > .article > p"):
             row=p.get_text()
-            get_feld(item,row,['报名时间','报名地址','报名方式'])
+            get_feld(item,row,istrs)
+        for istr in istrs:
+            if istr not in item.keys():
+                item[istr]=''
         del item['thread']
-    # with open('./data.json', 'wb') as fd:
-    #     # for json_data in data:
-    #     #     print(json_data)
-    #     fd.writelines((data))
+    with open('results/sydw/data.json', 'w+', encoding='utf-8') as fd:
+        jstr=json.dumps(data, ensure_ascii=False)
+        fd.write(jstr)
     print('-----------------------------index data-------------------------------------')
-    print(data)
+    pprint(jstr)
     print('---------------------------------over--------------------------------------')
+    return jstr
 
 def get_feld(item,row,istrs):
     for istr in istrs:
         if(row.find(istr) >= 0):
-            item[''+istr+'']=row
-
-
-def danalysis_child(html_doc):
-    print(1)
+            item[istr]=row
 
 class myThread (threading.Thread):
     def __init__(self, link, save_path, filename,delay):
